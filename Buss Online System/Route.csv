@@ -1,0 +1,6 @@
+Origin,Destination,Trip Duration,Cost,RouteID
+Stockholm,Vasteras,2 h,140 Sek,a
+Stockholm,Balsta,2 h,140 Sek,b
+Vasteras,Stockholm,2h,125 Sek,c
+Uppsala,Stockholm,1h,120Sek,d
+Uppsala,Vasteras,1h,120 SEK,e
