@@ -8,7 +8,7 @@ public class Passanger {
 
 	private String name;
 	
-	private String email;
+	
 	
 	private String mobile;
 
@@ -17,23 +17,20 @@ public class Passanger {
 	 */
 	public Passanger() {
 
-		this.name = null;
-		this.email = null;
-		this.mobile = null;
-
+		
 	}
 
 	/**
-	 * Instantiates a new passanger.
+	 * Instantiates a new passenger.
 	 *
 	 * @param name   the name of the new passenger
 	 * @param email  the email of the new passenger
-	 * @param mobile the mobile of the passenegr 
+	 *  
 	 */
-	public Passanger(String name, String email, String mobile) {
+	public Passanger(String name,  String mobile) {
 
 		this.name = name;
-		this.email = email;
+		
 		this.mobile = mobile;
 
 	}
@@ -63,7 +60,7 @@ public class Passanger {
 	/**
 	 * Sets the passenger mobile number.
 	 *
-	 * @param mobile the new passenger mobile number
+	 * @param mobile the  passenger mobile number
 	 */
 	public void setPaxMobileNumber(String mobile) {
 
@@ -82,26 +79,7 @@ public class Passanger {
 
 	}
 
-	/**
-	 * Sets the passenger email.
-	 *
-	 * @param email the new passenger email
-	 */
-	public void setPaxEmail(String email) {
+	
 
-		this.email = email;
-
-	}
-
-	/**
-	 * Gets the passenger email.
-	 *
-	 * @return the passenger email
-	 */
-	public String getPaxEmail() {
-
-		return email;
-
-	}
 
 }

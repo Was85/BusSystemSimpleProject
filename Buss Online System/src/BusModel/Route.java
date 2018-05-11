@@ -1,100 +1,71 @@
 package BusModel;
 
+import java.util.ArrayList;
+
+import com.mysql.fabric.xmlrpc.base.Array;
+
+
 /**
- * The Class Route. Contains all the Route details that other classes will need
- * it when perform a reservation
- * 
+ * The Class Route.contains all the Route information (fields), 
+ * that the system need when make a reservation
  */
 public class Route {
 
-	private String origin;
+	
+	private String origin ;
+	
 
-	private String destination;
-
-	private String tripDuration;
-
-	private String cost;
-
-	private String routeId;
-
-	private TimeTable routeTime;
-
+	private String destination ;
+	
+	private String duration ;
+	
+	private String time ;
+	
+	
 	/**
 	 * Instantiates a new route.
 	 */
-	public Route() {
-		origin = null;
-		destination = null;
-		tripDuration = null;
-		cost = null;
-		routeId = null;
-		routeTime = new TimeTable();
-
+	
+	public Route(){
+		
+		
 	}
 
 	/**
 	 * Instantiates a new route.
 	 *
-	 * @param origin
-	 *            the origin of a certain trip ( from )
-	 * @param destination
-	 *            the destination of a certain trip ( To )
-	 * @param tripDuration
-	 *            the trip duration thats require for specific trip(from - To
-	 *            )time
-	 * @param cost
-	 *            the cost is representing the price of the tkt from origin to
-	 *            destination
-	 * @param routeId
-	 *            the route id represent identification number for each route
-	 * @param routeTime
-	 *            the route timeTable of this route or the frequency of trip
-	 *            time per day
+	 * @param origin the origin
+	 * @param destination the destination
+	 * @param duration the duration
+	 * @param time the time
 	 */
-	public Route(String origin, String destination, String tripDuration, String cost, String routeId,
-			TimeTable routeTime) {
+
+	public Route(String origin, String destination, String duration, String time) {
 
 		this.origin = origin;
 		this.destination = destination;
-		this.tripDuration = tripDuration;
-		this.cost = cost;
-		this.routeId = routeId;
-		this.routeTime = routeTime;
+		this.duration = duration;
+		this.time = time;
+		
+		
 	}
 
 	/**
-	 * Sets the origin . Its set the starting point(from) for certain route
+	 * Gets the origin.
 	 *
-	 * @param from
-	 *            the new origin that the route start with
-	 */
-	public void setOrigin(String from) {
-
-		this.origin = from;
-
-	}
-
-	/**
-	 * Gets the origin. This method used to get the origin for the route
-	 *
-	 * @return the origin for certain route
+	 * @return the origin
 	 */
 	public String getOrigin() {
-
 		return origin;
-
 	}
 
 	/**
-	 * Sets the destination. its set the end point for the route(To)
+	 * Sets the origin.
 	 *
-	 * @param destination
-	 *            the new destination
+	 * @param origin the origin to set
 	 */
-	public void setDestination(String destination) {
-
-		this.destination = destination;
-
+	public void setOrigin(String origin) {
+		this.origin = origin;
 	}
 
 	/**
@@ -103,64 +74,57 @@ public class Route {
 	 * @return the destination
 	 */
 	public String getDestination() {
-
 		return destination;
-
 	}
 
 	/**
-	 * Sets the trip duration. is used to set the duration time for certain
-	 * route or trip between origin and destination
+	 * Sets the destination.
 	 *
-	 * @param tripDuration
-	 *            the new trip duration is the for certain route between two
-	 *            city
+	 * @param destination the destination to set
 	 */
-	public void setTripeDuration(String tripDuration) {
-
-		this.tripDuration = tripDuration;
+	public void setDestination(String destination) {
+		this.destination = destination;
 	}
 
 	/**
-	 * Sets the route id for the new route
+	 * Gets the duration.
 	 *
-	 * @param routeDetails
-	 *            the new route id
+	 * @return the duration
 	 */
-	public void setrouteId(String routeDetails) {
-
-		this.routeId = routeDetails;
+	public String getDuration() {
+		return duration;
 	}
 
 	/**
-	 * Sets the cost. set the price of Ticket between two cities
+	 * Sets the duration.
 	 *
-	 * @param cost
-	 *            the new cost to set
+	 * @param duration the duration to set
 	 */
-	public void setcost(String cost) {
-
-		this.cost = cost;
+	public void setDuration(String duration) {
+		this.duration = duration;
 	}
 
 	/**
-	 * Gets the tripe duration time between two cities (for certain route)
+	 * Gets the time.
 	 *
-	 * @return the tripe duration time
+	 * @return the time
 	 */
-	public String getTripeDuration() {
-
-		return tripDuration;
+	public String getTime() {
+		return time;
 	}
 
 	/**
-	 * Gets the route id for certain route
+	 * Sets the time.
 	 *
-	 * @return the route id
+	 * @param time the time to set
 	 */
-	public String getrouteId() {
-
-		return routeId;
+	public void setTime(String time) {
+		this.time = time;
 	}
-
+	
+	
+	
+	
+	
+	
 }

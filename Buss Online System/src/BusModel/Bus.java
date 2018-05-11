@@ -9,13 +9,13 @@ import java.util.ArrayList;
  */
 public class Bus {
 
-	private int busSeatNumber = 40;
+	private int busSeatNumber;
 
 	private String busRegNum;
 
 	private Route busRoute;
 
-	private ArrayList<Passanger> pax;
+	private ArrayList<Passanger> paxInTheBus;
 
 	/**
 	 * Instantiates a new bus.
@@ -24,101 +24,101 @@ public class Bus {
 	 *            the bus reg num
 	 * @param busRoute
 	 *            the bus route
+	 * @param seatNumbers
+	 *            , represent default seatNumber
 	 */
 	public Bus(String busRegNum, Route busRoute) {
-
-		this.busRegNum = busRegNum;
-		pax = new ArrayList<>();
 		this.busRoute = busRoute;
+		this.busRegNum = busRegNum;
+		busSeatNumber = 40;
+		paxInTheBus = new ArrayList<>();
 
 	}
 
 	/**
-	 * Instantiates a new bus. assign null to bus fields
-	 */
-	public Bus() {
-
-		busRegNum = null;
-		busRoute = new Route();
-		pax = new ArrayList<>();
-
-	}
-
-	/**
-	 * Sets the bus reg number.
+	 * Instantiates a new bus.
 	 *
 	 * @param busRegNum
-	 *            the new bus reg number
+	 *            the bus reg num
+	 * @param busRoute
+	 *            the bus route
+	 * @param seatNumbers
 	 */
-	public void setBusRegNumber(String busRegNum) {
 
+	public Bus(String busRegNum, Route busRoute, int busSeatNumber) {
+
+		this.busSeatNumber = busSeatNumber;
 		this.busRegNum = busRegNum;
+		this.busRoute = busRoute;
 
+		paxInTheBus = new ArrayList<>();
 	}
 
 	/**
-	 * Gets the bus reg number.
-	 *
-	 * @return the bus reg number
+	 * @return the busSeatNumber
 	 */
-	public String getBusRegNumber() {
-
-		return busRegNum;
-
-	}
-
-	/**
-	 * Sets the route for each single bus that has been created
-	 *
-	 * @param route
-	 *            the new route too set
-	 */
-	public void setRoute(Route route) {
-
-		this.busRoute = route;
-
-	}
-
-	/**
-	 * Gets the bus route.
-	 *
-	 * @return the bus route
-	 */
-	public Route getBusRoute() {
-
-		return busRoute;
-
-	}
-
-	/**
-	 * Gets the seat number.
-	 *
-	 * @return the seat number of bus
-	 */
-	public int getSeatNumber() {
-
+	public int getBusSeatNumber() {
 		return busSeatNumber;
 	}
 
 	/**
-	 * Sets the seat number of the new bus if desired
-	 *
 	 * @param busSeatNumber
-	 *            the seat number
+	 *            is used to set the busSeatNumber
 	 */
-	public void setSeatNumber(int busSeatNumber) {
+	public void setBusSeatNumber(int busSeatNumber) {
 		this.busSeatNumber = busSeatNumber;
 	}
 
 	/**
-	 * Adds the passenger to the bus.
-	 *
-	 * @param passenger
-	 *            adding the passenger to the bus
+	 * @return the busRegNum
 	 */
-	public void addPassengerToTheBus(Passanger passenger) {
+	public String getBusRegNum() {
+		return busRegNum;
+	}
 
-		pax.add(passenger);
+	/**
+	 * @param busRegNum
+	 *            the busRegNum to set
+	 */
+	public void setBusRegNum(String busRegNum) {
+		this.busRegNum = busRegNum;
+	}
+
+	/**
+	 * @return the busRoute
+	 */
+	public Route getBusRoute() {
+		return busRoute;
+	}
+
+	/**
+	 * @param busRoute
+	 *            the busRoute to set
+	 */
+	public void setBusRoute(Route busRoute) {
+		this.busRoute = busRoute;
+	}
+
+	/**
+	 * @return the paxInTheBus
+	 */
+	public ArrayList<Passanger> getPaxInTheBus() {
+		return paxInTheBus;
+	}
+
+	/**
+	 * 
+	 * @param newPax
+	 *            that made the current booking to be added to the bus passenger
+	 * 
+	 *            list and then increment the bus seat number
+	 */
+	public void addNewPax(Passanger newPax) {
+
+		paxInTheBus.add(newPax);
+
+		busSeatNumber--;
+
 	}
 
 }

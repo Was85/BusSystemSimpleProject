@@ -1,213 +1,509 @@
 package BusController;
 
 import java.util.*;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.sql.Date;
+import java.sql.*;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import BusModel.*;
+
 
 /**
  * The Class BusReservationController. used to maintain the interaction between
  * the view and the model class contains all the logical method that perform
  * operation action on view console.
  */
+/**
+ * @author Waseem
+ *
+ */
+/**
+ * @author Waseem
+ *
+ */
+
 public class BusReservationController {
 
+	
+	private BusDataBase db;
+
+	
 	private static final String COMMA_DELIMITER = ",";
-
-	private DataBase DbCtr;
-
-	private Passanger pax;
-
-	private HashMap<Integer, java.sql.Time> intervals;
-
-	private int start;
-
-	private int end;
-
-	private int freq;
-
-	String Email = null;
-
-	String Name = null;
-
-	String mobile = null;
-
+	
+	
+	private ArrayList<Route> availableRoutesList;
+	
+	
+	private ArrayList<Bus> availableBusesList;
+	
+	private ArrayList<String> destinationList;
+	
+	
+	private ResultSet busResult ;
+	
+	
 	private int twoDm[][];
+
 
 	private int i, j, k = 1;
 
+	
 	private int ans;
 
+	
 	boolean seatbooked = false;
 
-	private HistoryReservation reservationHistory;
+	
+	/**
+	 * Instantiates a new bus reservation controller.
+	 */
+	public BusReservationController() {
+		availableRoutesList = new ArrayList<>();
+		destinationList = new ArrayList<>();
+		availableBusesList = new ArrayList<>();
+		db = new BusDataBase();
+		getDbResultToRouteObj();
+		getDbResultTobusObj();
+	}
 
 	/**
-	 * Instantiates a new bus reservation controller that will create the local
-	 * database by reading the external database(CSV files)
+	 * Update buses data base , by adding the new bus to the database
+	 * 
+	 * for exist bus this method will just utilized to update the database
 	 *
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
+	 * @param newBus the new bus
+	 * @return true, if successful
 	 */
-	public BusReservationController() throws IOException {
+	
+	public boolean updateBusesDataBase(Bus newBus) {
+		
+		try {
+			
+		Connection connection = db.getDefaultConnectionToDb();
+		
+		  Calendar calendar = Calendar.getInstance();
+	      Date purchaseDate = new Date(calendar.getTime().getTime());
+	      
+	      
+	      // the mySql insert statement
+	      String query = " insert into buses (regNumber, origin, destination, seatnumbers, purchaseddate)"
+	        +   " values (?, ?, ?, ?, ?) on duplicate key update"+" seatnumbers = values(seatnumbers)";
+	    	
+	      // create the mySql insert preparedStatement
+	      PreparedStatement preparedStmt = connection.prepareStatement(query);
+	      preparedStmt.setString (1, newBus.getBusRegNum());
+	      preparedStmt.setString (2, newBus.getBusRoute().getOrigin());
+	      preparedStmt.setString   (3, newBus.getBusRoute().getDestination());
+	      preparedStmt.setInt(4,newBus.getBusSeatNumber());
+	      preparedStmt.setDate(5,purchaseDate);   
 
-		DbCtr = new DataBase();
-		intervals = new HashMap<>();
-		twoDm = new int[10][4];
-		reservationHistory = new HistoryReservation();
-		getTimeTableFromCsvToLocalDateBase();
-		getRouteDetailsFromCscAndToRoutList();
-		getBusDetailsFromCsvAndSaveToListOfBusses();
+	      // execute the preparedStatement
+	      preparedStmt.executeUpdate();
+	  
+	      connection.close();
+		return true ;
+		}catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+return false ;
+	}
+
+	
+	
+	/**
+	 * Gets the db result to route obj.
+	 *
+	 * @return the db result to route obj
+	 */
+	public void getDbResultToRouteObj() {
+		ResultSet res = db.dbRouteResult();
+		int rowcount = 0;
+		try {
+			if (res.last()) {
+				rowcount = res.getRow();
+				res.beforeFirst(); // not rs.first() because the rs.next() below
+									// will move on, missing the first element
+			}
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+
+		try {
+			while (res.next()) {
+
+				String origin = res.getString(2);
+				String destination = res.getString(3);
+				String duration = res.getString(4);
+				String time = res.getString(5);
+
+				Route route = new Route(origin, destination, duration, time);
+
+				availableRoutesList.add(route);
+
+				// System.out.println("from "+origin+" To " +destination+"
+				// Duration " + duration + " at clock "+ time);
+				// System.out.println(" ");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	
+	
+	/**
+	 * Gets the db result tobus obj.
+	 *
+	 * @return the db result tobus obj
+	 */
+	public void getDbResultTobusObj() {
+		ResultSet res = db.dbBusesResult();
+		int rowcount = 0;
+		try {
+			if (res.last()) {
+				rowcount = res.getRow();
+				res.beforeFirst(); // not rs.first() because the rs.next() below
+									// will move on, missing the first element
+			}
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+
+		try {
+			while (res.next()) {
+
+				String regNumber = res.getString(1);
+				String origin = res.getString(2);
+				String destination = res.getString(3);
+				int seatNumbers = res.getInt(4);
+
+				Route theRoute =null;
+				for(int i = 0 ; i < availableRoutesList.size();i++){
+					if(availableRoutesList.get(i).getOrigin()== origin && availableRoutesList.get(i).getDestination() == destination){
+						theRoute =availableRoutesList.get(i);
+					}
+				}
+				
+				Bus bus = new Bus(regNumber,theRoute,seatNumbers);
+
+				availableBusesList.add(bus);
+
+				// System.out.println("from "+origin+" To " +destination+"
+				// Duration " + duration + " at clock "+ time);
+				// System.out.println(" ");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
 	}
 
 	/**
-	 * Nex pax. get Passenger information after validating them from the view
-	 * and create new passenger and then add to bus list and data base
+	 * Selected route details.
 	 *
-	 * @param paxInfo
-	 *            the pax info as array
+	 * @param origin the origin
+	 * @param destination the destination
+	 * @return the route
 	 */
-	public void nexPax(String[] paxInfo) {
+	public Route selectedRouteDetails(String origin, String destination) {
 
-		for (int i = 0; i < paxInfo.length; i++) {
+		for (int i = 0; i < availableRouteList().size(); i++) {
 
-			if (paxInfo[i].contains("@") && paxInfo[i].contains(".")) {
-				Email = paxInfo[i];
-			} else if (paxInfo[i].matches(".*\\d+.*")) {
-				mobile = paxInfo[i];
-			} else if (paxInfo[i].matches("[a-zA-Z]+")) {
-				Name = paxInfo[i];
+			if (origin.equals(availableRouteList().get(i).getOrigin())
+					&& destination.equals(availableRouteList().get(i).getDestination())) {
+
+				return availableRouteList().get(i);
 			}
+
 		}
-		Passanger pax = new Passanger(Name, mobile, Email);
-
-		for (int i = 0; i < DbCtr.BussesList().size(); i++) {
-
-			if (DbCtr.BussesList().get(i).getSeatNumber() == 0) {
-
-				DbCtr.BussesList().get(i + 1).addPassengerToTheBus(pax);
-
-			} else {
-				DbCtr.BussesList().get(i).addPassengerToTheBus(pax);
-			}
-		}
-		DbCtr.addPaxTothePassangerLocalDataBase(Name, pax);
+		return null;
 
 	}
 
 	/**
-	 * Check selection validity by compare the selection as (id) to the route id
-	 * in rout list
+	 * Validate user name.
 	 *
-	 * @param selection
-	 *            the selection made by the user
-	 * @return true, if successful the selection match any rout in the route
-	 *         list
+	 * @param userName the user name
+	 * @return true, if successful
 	 */
-	public boolean checkSelectionValidaity(String selection) {
-		for (Route route : routeList())
-			if (route.getrouteId().equals(selection)) {
-				return true;
-			}
+	public boolean validateUserName(String userName) {
+		Pattern usrNamePtrn = Pattern.compile("^[\\p{L} .'-]+$");
+
+		Matcher match = usrNamePtrn.matcher(userName);
+		if (match.matches()) {
+			return true;
+		}
 		return false;
 	}
 
 	/**
-	 * Passenger name who made the current booking.
+	 * Validate mobile number.
 	 *
-	 * @return the string represent the passenger name
+	 * @param mobileNumber the mobile number
+	 * @return true, if successful
 	 */
-	public String passangerNameWhoMadeTheCurrentBooking() {
-		return Name;
+	public  boolean validateMobileNumber(String mobileNumber) {
+		Pattern usrNamePtrn = Pattern.compile("[0-9]+");
 
-	}
-
-	/**
-	 * Passenger mobile who made the current booking.
-	 *
-	 * @return the string represent the mobile number for the passenger who made
-	 *         the reservation
-	 */
-	public String passangerMobileWhoMadeTheCurrentBooking() {
-		return mobile;
-
-	}
-
-	/**
-	 * Passenger email who made the current booking.
-	 *
-	 * @return the string represent the email for the passenger who made the
-	 *         last booking
-	 */
-	public String passangerEmaileWhoMadeTheCurrentBooking() {
-		return Email;
-
-	}
-
-	/**
-	 * Check if the input number or char.
-	 *
-	 * @param nextLine
-	 *            the next line
-	 * @return true, if its not number
-	 */
-	public boolean checkIfTheInputNumberOrChar(String nextLine) {
-
-		if (nextLine.matches("\\d+")) {
-			return false;
-
-		} else
-
+		Matcher match = usrNamePtrn.matcher(mobileNumber);
+		if (match.matches()) {
 			return true;
-
+		}
+		return false;
 	}
 
 	/**
-	 * Numbering seat. gives number to the 2D arraylist that represent the seat
-	 * number from 1 to 40
+	 * Available route list.
+	 *
+	 * @return the array list
 	 */
-	public void numberingSeat() {
+	public ArrayList<Route> availableRouteList() {
 
-		int k = 1;
-		for (i = 0; i < 10; i++) {
-			for (j = 0; j < 4; j++) {
-				twoDm[i][j] = k;
-				k++;
+		return availableRoutesList;
+	}
 
+	// return origin list from available Routes list
+
+	/**
+	 * Origin list.
+	 *
+	 * @return the array list
+	 */
+	public ArrayList<String> originList() {
+		ArrayList<String> originList = new ArrayList<>();
+		for (int i = 0; i < availableRoutesList.size(); i++) {
+			String origin = availableRoutesList.get(i).getOrigin();
+			originList.add(origin);
+		}
+		return originList;
+	}
+
+	/**
+	 * Destination list for certain origin.
+	 *
+	 * @param origin the origin
+	 * @return the array list
+	 */
+	// return destination based on origin selection
+	public ArrayList<String> destinationListForCertainOrigin(String origin) {
+
+		for (int i = 0; i < availableRoutesList.size(); i++) {
+			if (origin.equals(availableRoutesList.get(i).getOrigin())) {
+				String destination = availableRoutesList.get(i).getDestination();
+				destinationList.add(destination);
 			}
+
+		}
+		return destinationList;
+	}
+
+	/**
+	 * Destination list.
+	 *
+	 * @return the array list
+	 */
+	public ArrayList<String> destinationList() {
+
+		return destinationList;
+	}
+	
+	/**
+	 * Clear destination list. in order to create a new booking 
+	 */
+	public void clearDestinationList(){
+		
+		destinationList.clear();
+	}
+
+	/**
+	 * New pax.
+	 *
+	 * @param paxName the pax name
+	 * @param paxMobileNumber the pax mobile number
+	 * @return the passanger
+	 */
+	public Passanger newPax(String paxName, String paxMobileNumber) {
+
+		Passanger passenger = new Passanger(paxName, paxMobileNumber);
+
+		return passenger;
+	}
+
+	/**
+	 * New bus.
+	 *
+	 * @param regNumber the reg number
+	 * @param routeSelected the route selected
+	 * @return the bus
+	 */
+	public Bus newBus(String regNumber, Route routeSelected) {
+
+		Bus busA = new Bus(regNumber, routeSelected);
+
+		return busA;
+	}
+
+	/**
+	 * Rand registration bus number. creat random regNumber once the 
+	 * system creat new bus
+	 *
+	 * @return the string
+	 */
+	public String randRegistrationBusNumber() {
+
+		String regNum = "";
+		ArrayList<Integer> list = new ArrayList<>();
+		for (int i = 1; i < 11; i++) {
+			list.add(new Integer(i));
 		}
 
+		Collections.shuffle(list);
+		for (int i = 0; i < 3; i++) {
+			regNum += list.get(i);
+
+		}
+
+		return regNum;
+
 	}
 
+	
+
+	
+
+	
 	/**
-	 * Gets the numbered seat of 2D array
+	 * Check bus availability.
 	 *
-	 * @return the numbered seat
+	 * @param selectedRoute the selected route
+	 * @return the bus
 	 */
-	public int[][] getNumberedSeat() {
-		return twoDm;
+	public Bus checkBusAvailability(Route selectedRoute) {
+
+		Connection dbConnetcion = db.getDefaultConnectionToDb();
+
+		try {
+			Statement mystat = dbConnetcion.createStatement();
+
+			busResult = mystat.executeQuery("SELECT * FROM buses");
+
+			if (busResult.next()==false) {
+				dbConnetcion.close();
+				return null;
+			} else {
+				busResult.beforeFirst();
+				while (busResult.next()) {
+					if (selectedRoute.getOrigin().equals(busResult.getString("origin"))
+							&& selectedRoute.getDestination().equals(busResult.getString("destination"))) {
+						
+						String regNumber   =busResult.getString("regNumber");
+						String origin      =busResult.getString("origin");
+						String destination =busResult.getString("destination");
+						int seatNumber     =busResult.getInt("seatnumbers");
+						Bus theBus = new Bus (regNumber,selectedRouteDetails(origin, destination),seatNumber);
+						
+						
+						
+						dbConnetcion.close();
+						return theBus ;
+						
+						
+						 
+					}
+
+				}
+			}
+
+		} catch (SQLException e) {
+
+			e.printStackTrace();
+		}
+		return null;
+		
+
+	}
+	
+	
+	/**
+	 * Gets the bus result from database
+	 *
+	 * @return the bus result
+	 */
+	public ResultSet getBusResult (){
+		
+		
+		return busResult ;
 	}
 
+	
+	
+	
+	
+	
 	/**
-	 * Book seat in the bus
+	 * Buses list.
 	 *
-	 * @param seatNumber
-	 *            the seat number selected by the user
-	 * @return the seat number if the seat is booked correctly
+	 * @return the array list
+	 */
+	public ArrayList<Bus> busesList(){
+		
+		
+		return availableBusesList ;
+	}
+	
+	/**
+	 * Find the bus number for the passenger
+	 *
+	 * @param name the name
+	 * @return the string
+	 */
+	public String findWhichBusByName(String name){
+		
+		
+		
+		for(Bus b : availableBusesList){
+			
+			for(int j = 0 ; j < b.getPaxInTheBus().size();j++){
+				if(b.getPaxInTheBus().get(j).getPaxName().equals(name)){
+					return b.getBusRegNum();
+				}
+			}
+			
+			
+		}
+		return null;
+				
+		
+	}
+	
+	
+	public void addBusToAvailableBusesLst (Bus bus){
+		
+		availableBusesList.add(bus);
+	}
+	
+	
+
+	
+	/**
+	 * Book seat. To make the set as window and alies line 
+	 * 
+	 *
+	 * @param seatNumber the seat number
+	 * @return the int
 	 */
 	public int bookSeat(String seatNumber) {
 
 		ans = Integer.parseInt(seatNumber);
 		k = 1;
-
-		// while (!(seatbooked)) {
 
 		for (i = 0; i < 10; i++) {
 			for (j = 0; j < 4; j++) {
@@ -232,527 +528,23 @@ public class BusReservationController {
 		}
 
 	}
-
+	
 	/**
-	 * Gets the route details from CSV and to the rout list in the local data
-	 * base Route Creation and initialization
-	 * 
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
+	 * Numbering seat. Unused for the time being till we get the GUI
 	 */
-
-	public void getRouteDetailsFromCscAndToRoutList() throws IOException {
-		{
-
-			BufferedReader br = null;
-
-			// Reading the csv file
-			br = new BufferedReader(new FileReader("/Users/waseem/workspace/Buss Online System/Route.csv"));
-
-			String line = "";
-			// Read to skip the header
-			br.readLine();
-			// Reading from the second line
-
-			while ((line = br.readLine()) != null) {
-				Route route = new Route();
-				String[] RouteDetails = line.split(COMMA_DELIMITER);
-
-				route.setOrigin(RouteDetails[0]);
-				route.setDestination(RouteDetails[1]);
-				route.setTripeDuration(RouteDetails[2]);
-				route.setcost(RouteDetails[3]);
-				route.setrouteId(RouteDetails[4]);
-				DbCtr.addRouteToRouteList(route);
-
-			}
-
-			br.close();
-		}
-	}
-
-	/**
-	 * Gets the bus details from CSV and save to list of busses in the local
-	 * database busses Creation and initialization
-	 * 
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-
-	public void getBusDetailsFromCsvAndSaveToListOfBusses() throws IOException {
-		{
-
-			BufferedReader br = null;
-
-			// Reading the csv file
-			br = new BufferedReader(new FileReader("/Users/waseem/workspace/Buss Online System/Bus.csv"));
-
-			String line = "";
-			// Read to skip the header
-			br.readLine();
-			// Reading from the second line
-
-			while ((line = br.readLine()) != null) {
-				Bus bus = new Bus();
-				String[] BusDetails = line.split(COMMA_DELIMITER);
-
-				bus.setBusRegNumber(BusDetails[0]);
-
-				Route route = getRouteForCertainBus(BusDetails[1]);
-				bus.setRoute(route);
-				DbCtr.addBusToBussesList(bus);
-
-			}
-			br.close();
-		}
-	}
-
-	/**
-	 * Gets the route for certain bus by compare the route id selected by the
-	 * user with the route id for each bus
-	 *
-	 * @param routid
-	 *            the routid
-	 * @return the busroute for certain bus
-	 */
-	public Route getRouteForCertainBus(String routid) {
-		Route busRoute = null;
-		for (Route route : DbCtr.routeList()) {
-			if (route.getrouteId().equals(routid))
-				busRoute = route;
-		}
-		return busRoute;
-	}
-
-	/**
-	 * Gets the time table from csv to local date base. time table creatipon and
-	 * initial
-	 * 
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-
-	public void getTimeTableFromCsvToLocalDateBase() throws IOException {
-
-		BufferedReader br = null;
-
-		// Reading the csv file
-		br = new BufferedReader(new FileReader("/Users/waseem/workspace/Buss Online System/TimeTable.csv"));
-		String line = "";
-		// Read to skip the header
-		br.readLine();
-		// Reading from the second line
-
-		while ((line = br.readLine()) != null) {
-
-			TimeTable time = new TimeTable();
-			String[] TimeTablaeDetails = line.split(COMMA_DELIMITER);
-
-			time.setId(TimeTablaeDetails[0]);
-			time.setStartDate(Integer.parseInt(TimeTablaeDetails[1]));
-			time.setEndTime(Integer.parseInt(TimeTablaeDetails[2]));
-			time.setFrequency(Integer.parseInt(TimeTablaeDetails[3]));
-
-			DbCtr.addTimeTableToList(time);
-		}
-		br.close();
-	}
-
-	// potential destination list
-
-	/**
-	 * Potential destination for selected origin. as the system work by suggest
-	 * the potential destination for any selected origin
-	 *
-	 * @param selectionMade
-	 *            the selection made by the user for the origin (from)
-	 * @return the hash map contains all the destination(To) for certain
-	 *         origin(from)
-	 */
-	public HashMap<String, String> potentialDestinationForSelectedOrigin(String selectionMade) {
-		HashMap<String, String> potentialDestination = new HashMap<>();
-
-		String originslection = allOriginList().get(selectionMade);
-
-		for (Map.Entry<String, String> entry : allOriginList().entrySet()) {
-			String key = entry.getKey();
-			String value = entry.getValue();
-
-			if (value.equals(originslection)) {
-
-				String destination = destinationList().get(key);
-
-				potentialDestination.put(key, destination);
-			}
-
-		}
-
-		return potentialDestination;
-	}
-
-	/**
-	 * Destination list.
-	 *
-	 * @return the hash map contains all destination list
-	 */
-	public HashMap<String, String> destinationList() {
-		HashMap<String, String> destinationList = new HashMap<String, String>();
-
-		for (Route route : DbCtr.routeList()) {
-			String destination = route.getDestination();
-			String id = route.getrouteId();
-
-			destinationList.put(id, destination);
-
-		}
-
-		return destinationList;
-
-	}
-
-	/**
-	 * All origin list.
-	 *
-	 * @return the hash map contains all the origin list
-	 */
-	public HashMap<String, String> allOriginList() {
-		HashMap<String, String> allOriginList = new HashMap<String, String>();
-
-		for (Route route : DbCtr.routeList()) {
-			String destination = route.getOrigin();
-			String id = route.getrouteId();
-
-			allOriginList.put(id, destination);
-
-		}
-
-		return allOriginList;
-
-	}
-
-	/**
-	 * All destination list.
-	 *
-	 * @return the hash map
-	 */
-	/*
-	 * public HashMap<String, String> allDestinationList() { HashMap<String,
-	 * String> allDestinaionList = new HashMap<String, String>();
-	 * 
-	 * for (Route route : DbCtr.routeList()) { String destination =
-	 * route.getOrigin(); String id = route.getrouteId();
-	 * 
-	 * allDestinaionList.put(id, destination);
-	 * 
-	 * }
-	 * 
-	 * return allDestinaionList;
-	 * 
-	 * }
-	 */
-
-	/**
-	 * Origin list. used to get all the origin list without duplication
-	 *
-	 * @return the hash map contains all the origin list without any duplication
-	 */
-	public HashMap<String, String> OriginList() {
-		HashMap<String, String> routeMap = new HashMap<>();
-		HashMap<String, String> temp = new HashMap<>();
-
-		for (Route route : DbCtr.routeList()) {
-			String id = route.getrouteId();
-			String origin = route.getOrigin();
-
-			routeMap.put(id, origin);
-
-		}
-
-		Set<String> keys = routeMap.keySet(); // The set of keys in the map.
-
-		Iterator<String> keyIter = keys.iterator();
-
-		while (keyIter.hasNext()) {
-			String key = keyIter.next();
-			String value = routeMap.get(key);
-			temp.put(value, key);
-		}
-		routeMap = new HashMap<String, String>();
-		keys = temp.keySet(); // The set of keys in the map.
-
-		keyIter = keys.iterator();
-
-		while (keyIter.hasNext()) {
-			String key = keyIter.next();
-			String value = temp.get(key);
-			routeMap.put(value, key);
-		}
-
-		return routeMap;
-	}
-
-	// Return specific route
-
-	/**
-	 * Gets the route selected by the user through searching inside route list
-	 * and get route that have the same Id
-	 *
-	 * @param id
-	 *            the id of the selected route
-	 * @return the route matched the user id request
-	 */
-	public Route getTheRouteSelected(String id) {
-		for (Route route : DbCtr.routeList()) {
-
-			route.getrouteId().equals(id);
-			return route;
-		}
-		return null;
-
-	}
-
-	/**
-	 * Route list.
-	 *
-	 * @return the array list contains all the route
-	 */
-	public ArrayList<Route> routeList() {
-
-		return DbCtr.routeList();
-
-	}
-
-	/**
-	 * Time list for the selected route. by comparing the timetable id with the
-	 * route id selected by the user and get the matched timetable for certain
-	 * route.
-	 *
-	 * @param selectedRouteID
-	 *            the selected route ID
-	 * @return the hash map that contain all the time frequency for the intend
-	 *         route
-	 */
-	public HashMap<Integer, java.sql.Time> timeListForTheSelectedRoute(String selectedRouteID) {
-
-		for (Iterator<TimeTable> iterator = DbCtr.timeTableList().iterator(); iterator.hasNext();) {
-			TimeTable timing = iterator.next();
-			if (timing.getId().equals(selectedRouteID)) {
-
-				start = timing.getStartDate();
-				end = timing.getEndTime();
-				freq = timing.getFrequency();
+	public void numberingSeat() {
+
+		int k = 1;
+		for (i = 0; i < 10; i++) {
+			for (j = 0; j < 4; j++) {
+				twoDm[i][j] = k;
+				k++;
 
 			}
 		}
 
-		return CreatTimeList(start, end, freq);
-
 	}
 
-	/**
-	 * Create time list. its received three parameter (Start , end ,frequency)
-	 * and create Time list accordingly
-	 *
-	 * @param start
-	 *            the start time for the bus (first bus at 9:am)
-	 * @param end
-	 *            the end time for the bus (Last bus at 18:00pm)
-	 * @param frequency
-	 *            the frequency of busses ( bus every 30 mint)
-	 * @return the hash map contains all the timing list based on the three
-	 *         parameter received.
-	 */
-	@SuppressWarnings("deprecation")
-	public HashMap<Integer, java.sql.Time> CreatTimeList(int start, int end, int frequency) {
+	
 
-		java.sql.Time startTime = new java.sql.Time(start, 0, 0);
-		java.sql.Time endTime = new java.sql.Time(end, 0, 0);
-		int i = 1;
-		intervals.put(i, startTime);
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(startTime);
-		while (cal.getTime().before(endTime)) {
-			i++;
-			cal.add(Calendar.MINUTE, frequency);
-			intervals.put(i, new java.sql.Time(cal.getTimeInMillis()));
-
-		}
-
-		return intervals;
-	}
-
-	/**
-	 * Catch input date as string convert it to DATE and compare if the selected
-	 * date before the current Date.
-	 *
-	 * @param receivedDate
-	 *            the received date is the input date
-	 * @return the date if the date is valid otherwise return null
-	 */
-	public Date catchInputDate(String receivedDate) {
-
-		DateFormat dateformat = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
-		Date date = null;
-		try {
-			int[] dateDetails = new int[3];
-			Calendar cal = new GregorianCalendar();
-			date = dateformat.parse(receivedDate);
-			Date today = cal.getTime();
-
-			if (date.after(today)) {
-
-				return date;
-
-			} else
-				return null;
-
-		} catch (Exception e) {
-			return null;
-		}
-
-	}
-
-	/**
-	 * Time frequency list.
-	 *
-	 * @return the hash map contains the timelist
-	 */
-	public HashMap<Integer, java.sql.Time> TimeFrequencyList() {
-
-		return intervals;
-
-	}
-
-	/**
-	 * Calculate arrival time.
-	 *
-	 * @param DepartureTime
-	 *            the departure time
-	 * @param tripDuration
-	 *            the trip duration time
-	 * @return the string representing arrival time
-	 */
-
-	public String calculateArrivalTime(String DepartureTime, int tripDuration) {
-
-		SimpleDateFormat departingTime = new SimpleDateFormat("HH:mm:ss");
-
-		Date d;
-		try {
-			d = departingTime.parse(DepartureTime);
-		} catch (ParseException e) {
-			return "Wrong Format";
-		}
-		Calendar DepTime = new GregorianCalendar();
-		DepTime.setTime(d);
-		DepTime.add(Calendar.HOUR, tripDuration);
-		Date ArrivalTime = DepTime.getTime();
-
-		return ArrivalTime.getHours()+":"+ ArrivalTime.getMinutes();
-
-	}
-
-	/**
-	 * Gets the reservation history.
-	 *
-	 * @return the reservationHistory
-	 */
-	public HistoryReservation getReservationHistory() {
-		return reservationHistory;
-	}
-
-	/**
-	 * Sets the reservation history to the local data base.
-	 *
-	 * @param routeId
-	 *            the route id
-	 * @param passangerName
-	 *            the passenger name
-	 * @param busId
-	 *            the bus id
-	 * @param seatNumber
-	 *            the seat number
-	 * @param travelTime
-	 *            the travel time
-	 * @param travelDate
-	 *            the travel date
-	 */
-
-	public void setReservationHistoryToTheLocalDataBase(String routeId, String passangerName, String busId,
-			String seatNumber, String travelTime, String travelDate) {
-		HistoryReservation reservation = new HistoryReservation();
-
-		reservation.setRouteId(routeId);
-		reservation.setPassangerName(passangerName);
-		reservation.setBusId(busId);
-		reservation.setSeatNumber(seatNumber);
-		reservation.setTravelTime(travelTime);
-		reservation.setTravelDate(travelDate);
-
-		DbCtr.addBookingToHistoryList(reservation);
-	}
-
-	/**
-	 * Gets the bus regnum for certain route.
-	 *
-	 * @param routeId
-	 *            the route id
-	 * @return the bus regnum for certain route
-	 */
-	public String getbusRegNumForCertainRoute(String routeId) {
-		String busRegId = null;
-		for (Bus bus : DbCtr.BussesList()) {
-
-			if (bus.getBusRoute().getrouteId().equals(routeId)) {
-				busRegId = bus.getBusRegNumber();
-			}
-
-		}
-
-		return busRegId;
-	}
-
-	/**
-	 * Convert date to string.
-	 *
-	 * @param date
-	 *            the date
-	 * @return the string
-	 */
-	public String convertDateToString(Date date) {
-		DateFormat dateformat = new SimpleDateFormat("yyyy/MM/dd");
-		return dateformat.format(date);
-	}
-
-	/**
-	 * Write route list from system to the external file.
-	 *
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	public void writeRouteListFromSystemToTheExternalFile() throws IOException {
-
-		FileWriter pw = new FileWriter("/Users/waseem/workspace/Buss Online System/ReservationHistory.csv", true);
-		StringBuilder sb = new StringBuilder();
-
-		for (HistoryReservation book : DbCtr.reservationHistoryList()) {
-			sb.append(book.getRouteId());
-			sb.append(',');
-			sb.append(book.getPassangerName());
-			sb.append(',');
-			sb.append(book.getBusId());
-			sb.append(',');
-			sb.append(book.getSeatNumber());
-			sb.append(',');
-			sb.append(book.getTravelTime());
-			sb.append(',');
-			sb.append(book.getTravelDate());
-			sb.append("\n");
-
-		}
-
-		pw.write(sb.toString());
-		pw.close();
-
-	}
 }
